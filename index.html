@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NvidiaFix AI — Linux GPU Troubleshooter</title>
+<meta name="description" content="Fix NVIDIA driver issues on Linux instantly. AI-powered step-by-step diagnosis." />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a26;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --accent: #76c7f5;
+  --accent-dim: rgba(118,199,245,0.12);
+  --accent-border: rgba(118,199,245,0.3);
+  --green: #22c55e;
+}
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+/* NAV */
+nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 1000px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 20px; }
+.logo-text { font-size: 17px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+.accent { color: var(--accent); }
+.btn-nav { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+.btn-nav:hover { background: rgba(118,199,245,0.22); }
+
+/* HERO */
+.hero { max-width: 700px; margin: 0 auto; padding: 80px 24px 60px; text-align: center; }
+.hero-badge { display: inline-block; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); padding: 5px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 28px; }
+.hero h1 { font-size: clamp(30px, 6vw, 52px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 20px; color: #f0f0f8; }
+.hero-sub { font-size: 17px; color: var(--text2); margin-bottom: 36px; }
+.btn-hero { background: var(--accent); color: #0a0a0f; border: none; padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s; display: inline-block; }
+.btn-hero:hover { opacity: 0.88; transform: translateY(-1px); }
+.hero-note { margin-top: 16px; font-size: 13px; color: var(--text2); }
+
+/* PROBLEMS */
+.section { max-width: 1000px; margin: 0 auto; padding: 60px 24px; }
+.section-border { border-top: 1px solid var(--border); }
+.section h2 { font-size: 26px; font-weight: 600; text-align: center; margin-bottom: 36px; color: #f0f0f8; }
+.problem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.problem-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 22px; transition: border-color 0.2s, background 0.2s; }
+.problem-card:hover { border-color: var(--border2); background: var(--bg3); }
+.p-icon { font-size: 24px; margin-bottom: 10px; }
+.p-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: #f0f0f8; }
+.p-desc { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+/* HOW IT WORKS */
+.steps { display: flex; align-items: flex-start; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.step { display: flex; align-items: flex-start; gap: 14px; max-width: 230px; }
+.step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step-text { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; }
+.step-text strong { font-size: 14px; color: #f0f0f8; }
+.step-text span { font-size: 13px; color: var(--text2); }
+.step-arrow { font-size: 20px; color: var(--text2); padding-top: 8px; }
+
+/* CTA */
+.cta-section { text-align: center; padding: 70px 24px; border-top: 1px solid var(--border); }
+.cta-section p { color: var(--text2); margin-bottom: 24px; font-size: 16px; }
+
+/* FOOTER */
+footer { border-top: 1px solid var(--border); padding: 24px; }
+.footer-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.footer-note { font-size: 13px; color: var(--text2); }
+
+/* APP PAGE */
+#app-page { display: none; flex-direction: column; height: 100vh; }
+.app-header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 20px; height: 56px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.back-btn { background: none; border: none; color: var(--text2); font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+.back-btn:hover { color: var(--text); background: var(--bg3); }
+.online-status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* CHAT */
+.chat-wrap { flex: 1; display: flex; flex-direction: column; max-width: 780px; width: 100%; margin: 0 auto; overflow: hidden; }
+#messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+.avatar.ai { background: #1a1a2e; color: var(--accent); border: 1px solid var(--accent-border); }
+.avatar.user { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+.bubble { max-width: 84%; padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.65; color: var(--text); }
+.msg.ai .bubble { background: var(--bg2); border: 1px solid var(--border); border-top-left-radius: 4px; }
+.msg.user .bubble { background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); border-top-right-radius: 4px; }
+.bubble strong { color: #f0f0f8; font-weight: 600; }
+.bubble code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border2); padding: 2px 6px; border-radius: 4px; color: #adf0c8; }
+.bubble pre { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12.5px; background: #0d1117; color: #e6edf3; padding: 12px 14px; border-radius: 8px; margin: 10px 0; overflow-x: auto; white-space: pre-wrap; border: 1px solid rgba(255,255,255,0.08); line-height: 1.6; }
+.bubble ul { padding-left: 18px; margin: 6px 0; }
+.bubble li { margin: 3px 0; }
+
+/* QUICK BUTTONS */
+.quick-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.quick-btn { font-size: 13px; padding: 7px 12px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-family: inherit; }
+.quick-btn:hover { border-color: var(--accent-border); background: var(--accent-dim); color: var(--accent); }
+
+/* TYPING */
+.typing { display: flex; gap: 5px; align-items: center; padding: 4px 2px; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text2); animation: bounce 1.3s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:0.5} 30%{transform:translateY(-7px);opacity:1} }
+
+/* INPUT */
+.input-area { border-top: 1px solid var(--border); padding: 14px 20px; background: var(--bg2); display: flex; gap: 10px; align-items: flex-end; }
+#user-input { flex: 1; resize: none; border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; font-size: 14px; font-family: inherit; color: var(--text); background: var(--bg3); line-height: 1.5; max-height: 120px; overflow-y: auto; outline: none; transition: border-color 0.2s; }
+#user-input:focus { border-color: var(--accent-border); }
+#user-input::placeholder { color: var(--text2); }
+#send-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s, transform 0.1s; }
+#send-btn:hover { opacity: 0.88; }
+#send-btn:active { transform: scale(0.95); }
+#send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .hero { padding: 50px 20px 40px; }
+  .steps { flex-direction: column; align-items: flex-start; }
+  .step-arrow { display: none; }
+  .footer-inner { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">NvidiaFix<span class="accent">AI</span></span>
+      </div>
+      <button class="btn-nav" onclick="openApp()">Launch free tool →</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">Free · No signup · Powered by Claude AI</div>
+    <h1>Fix your NVIDIA Linux<br>driver — in minutes</h1>
+    <p class="hero-sub">Black screen after a kernel update? Driver not loading? Tell the AI your problem and get exact terminal commands to fix it — step by step.</p>
+    <button class="btn-hero" onclick="openApp()">Diagnose my problem →</button>
+    <div class="hero-note">Works with Ubuntu · Fedora · Arch · Pop!_OS · Mint · and more</div>
+  </section>
+
+  <div class="section section-border">
+    <h2>Problems I can fix</h2>
+    <div class="problem-grid">
+      <div class="problem-card"><div class="p-icon">🖤</div><div class="p-title">Black screen after update</div><div class="p-desc">Kernel upgraded, NVIDIA module broke, system won't boot to desktop</div></div>
+      <div class="problem-card"><div class="p-icon">🔌</div><div class="p-title">Driver not loading</div><div class="p-desc">nvidia-smi fails, nouveau conflict, DKMS build errors</div></div>
+      <div class="problem-card"><div class="p-icon">🖥️</div><div class="p-title">Display issues</div><div class="p-desc">Stuck at low resolution, external monitor not detected, Wayland/X11 problems</div></div>
+      <div class="problem-card"><div class="p-icon">🔒</div><div class="p-title">Secure boot blocking</div><div class="p-desc">MOK enrollment needed, unsigned module rejected at boot</div></div>
+      <div class="problem-card"><div class="p-icon">🎮</div><div class="p-title">Gaming / CUDA issues</div><div class="p-desc">Proton/Steam crashes, Vulkan errors, CUDA not found</div></div>
+      <div class="problem-card"><div class="p-icon">🔄</div><div class="p-title">Fresh install problems</div><div class="p-desc">Newly installed driver causes issues, nouveau not disabled</div></div>
+    </div>
+  </div>
+
+  <div class="section section-border">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Describe your problem</strong><span>Tell the AI what's happening — in plain English, no jargon needed</span></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Run the commands</strong><span>AI gives you exact terminal commands and explains what each one does</span></div></div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Paste the output</strong><span>AI reads your output, finds the root cause, and gives the fix</span></div></div>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <h2>Ready to fix it?</h2>
+    <p>Free to use. No account needed. No install.</p>
+    <button class="btn-hero" onclick="openApp()">Start diagnosing →</button>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="logo"><span class="logo-icon">⚡</span><span class="logo-text">NvidiaFix<span class="accent">AI</span></span></div>
+      <span class="footer-note">Built for the Linux community · Powered by Claude AI</span>
+    </div>
+  </footer>
+</div>
+
+<!-- APP PAGE -->
+<div id="app-page">
+  <div class="app-header">
+    <button class="back-btn" onclick="backToLanding()">← Back</button>
+    <div class="logo"><span class="logo-icon">⚡</span><span class="logo-text">NvidiaFix<span class="accent">AI</span></span></div>
+    <div class="online-status"><div class="dot"></div>Online</div>
+  </div>
+  <div class="chat-wrap">
+    <div id="messages">
+      <div class="msg ai">
+        <div class="avatar ai">AI</div>
+        <div class="bubble">
+          Hey! I'm NvidiaFix AI — I specialize in diagnosing NVIDIA driver issues on Linux.<br><br>
+          Describe your problem and I'll walk you through a fix step by step.<br><br>
+          <strong>Quick start — pick your issue:</strong>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickSend('Black screen after updating my Linux kernel')">🖤 Black screen after update</button>
+            <button class="quick-btn" onclick="quickSend('NVIDIA driver not loading, nvidia-smi command fails')">🔌 Driver not loading</button>
+            <button class="quick-btn" onclick="quickSend('Screen stuck at low resolution after NVIDIA install')">🖥️ Stuck at low resolution</button>
+            <button class="quick-btn" onclick="quickSend('Secure boot is blocking my NVIDIA driver module')">🔒 Secure boot issue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="input-area">
+      <textarea id="user-input" placeholder="Describe your NVIDIA Linux problem... (Enter to send, Shift+Enter for new line)" rows="1"></textarea>
+      <button id="send-btn" onclick="sendMessage()" aria-label="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="#0a0a0f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are NvidiaFix AI, an expert Linux NVIDIA driver troubleshooter.
+
+Your job: diagnose and fix NVIDIA driver problems on Linux step by step.
+
+Supported distros: Ubuntu, Fedora, Arch, Pop!_OS, Linux Mint, Debian, openSUSE, Manjaro.
+
+Rules:
+- Ask ONE diagnostic question or give ONE action at a time. Never dump everything at once.
+- Always wrap terminal commands in triple backtick code blocks.
+- After the user pastes command output, analyze it and give the next step.
+- Be concise — short paragraphs, not walls of text.
+- If you don't know the distro yet, ask first before giving commands.
+- Common root causes: DKMS build failure, missing kernel headers, nouveau not blacklisted, Wayland incompatibility, Secure Boot blocking unsigned modules, wrong driver version for kernel.
+- When giving commands, add one short sentence explaining what it does.
+- If problem is resolved, confirm and give one tip to prevent it happening again.
+- Never give more than 3 commands at a time.
+- Use plain language — the user may be a beginner.`;
+
+let history = [];
+let isLoading = false;
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+
+function openApp() {
+  document.getElementById('landing').style.display = 'none';
+  const app = document.getElementById('app-page');
+  app.style.display = 'flex';
+  inputEl.focus();
+}
+
+function backToLanding() {
+  document.getElementById('app-page').style.display = 'none';
+  document.getElementById('landing').style.display = 'block';
+}
+
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function formatText(t) {
+  t = t.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, c) => `<pre>${c.trim().replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`);
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\n/g, '<br>');
+  return t;
+}
+
+function addMessage(role, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  const av = document.createElement('div');
+  av.className = 'avatar ' + (role === 'user' ? 'user' : 'ai');
+  av.textContent = role === 'user' ? 'You' : 'AI';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = formatText(text);
+  wrap.appendChild(av);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function showTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  wrap.id = 'typing';
+  wrap.innerHTML = '<div class="avatar ai">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+async function callClaude(msg) {
+  if (isLoading) return;
+  isLoading = true;
+  sendBtn.disabled = true;
+  history.push({ role: 'user', content: msg });
+  showTyping();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM_PROMPT, messages: history })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.error) {
+      addMessage('assistant', '⚠️ API error: ' + data.error.message);
+    } else {
+      const reply = data.content?.[0]?.text || 'Something went wrong. Please try again.';
+      history.push({ role: 'assistant', content: reply });
+      addMessage('assistant', reply);
+    }
+  } catch(e) {
+    removeTyping();
+    addMessage('assistant', '⚠️ Connection error. Check your internet and try again.');
+  }
+  isLoading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+  addMessage('user', text);
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  callClaude(text);
+}
+
+function quickSend(text) {
+  if (isLoading) return;
+  addMessage('user', text);
+  callClaude(text);
+}
+
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+</script>
+</body>
+</html>
