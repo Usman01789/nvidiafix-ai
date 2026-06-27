@@ -307,17 +307,17 @@ async function callClaude(msg) {
   history.push({ role: 'user', content: msg });
   showTyping();
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM_PROMPT, messages: history })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer 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' },
+      body: JSON.stringify({ model: 'llama3-70b-8192', max_tokens: 1000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history] })
     });
     const data = await res.json();
     removeTyping();
     if (data.error) {
       addMessage('assistant', '⚠️ API error: ' + data.error.message);
     } else {
-      const reply = data.content?.[0]?.text || 'Something went wrong. Please try again.';
+      const reply = data.choices?.[0]?.message?.content || 'Something went wrong. Please try again.';
       history.push({ role: 'assistant', content: reply });
       addMessage('assistant', reply);
     }
